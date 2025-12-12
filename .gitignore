@@ -1,1 +1,12 @@
 /.lake
+
+# emacs
+*~
+
+# vim 
+*.swp
+*.swo
+
+# mac nonsense
+.DS_Store
+
