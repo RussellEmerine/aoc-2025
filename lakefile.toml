@@ -8,3 +8,7 @@ name = "Aoc2025"
 [[lean_exe]]
 name = "aoc-2025"
 root = "Main"
+
+[[require]]
+name = "mathlib"
+scope = "leanprover-community"
