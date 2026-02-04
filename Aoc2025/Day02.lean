@@ -17,10 +17,10 @@ structure Range where
 
 namespace Range
 
-def Set (range : Range) : Set ℕ := Set.Ico range.start range.stop.succ
+def set (range : Range) : Set ℕ := Set.Ico range.start range.stop.succ
 
 instance : Membership ℕ Range where
-  mem r i := i ∈ r.Set
+  mem r i := i ∈ r.set
 
 instance (range : Range) (n : ℕ) : Decidable (n ∈ range) :=
   Set.decidableMemIco
@@ -41,9 +41,9 @@ def parser : Parser (Array Range) :=
 
 end Range
 
-def RepeatDigits (n : ℕ) : ℕ → ℕ 
+def repeatDigits (n : ℕ) : ℕ → ℕ
 | 0 => 0
-| x + 1 => n + 10 ^ (Nat.digits 10 n).length * RepeatDigits n x
+| x + 1 => n + 10 ^ (Nat.digits 10 n).length * repeatDigits n x
 
 lemma digits_getLast_ne_zero (b : ℕ) (n : ℕ) (h : 1 < b) (p : b.digits n ≠ [])
 : (b.digits n).getLast p ≠ 0 := by
@@ -51,7 +51,7 @@ lemma digits_getLast_ne_zero (b : ℕ) (n : ℕ) (h : 1 < b) (p : b.digits n ≠
   rcases h with ⟨b, h⟩
   rw [add_comm, ← add_assoc, Nat.add_one, Nat.add_one] at h
   subst h
-  unfold Nat.digits at p ⊢ 
+  unfold Nat.digits at p ⊢
   simp [-ne_eq] at p ⊢
   fun_induction Nat.digitsAux
   case case1 =>
@@ -77,13 +77,13 @@ lemma digits_getLast_ne_zero (b : ℕ) (n : ℕ) (h : 1 < b) (p : b.digits n ≠
       exact ih h
 
 theorem repeatDigits_digits (n : ℕ) (x : ℕ)
-: Nat.digits 10 (RepeatDigits n x) = (List.replicate x (Nat.digits 10 n)).flatten := by
+: Nat.digits 10 (repeatDigits n x) = (List.replicate x (Nat.digits 10 n)).flatten := by
   induction x
   case zero =>
-    simp [RepeatDigits]
+    simp [repeatDigits]
   case succ x hx =>
-    simp [RepeatDigits, List.replicate_succ]
-    have : Nat.ofDigits 10 (Nat.digits 10 (n + 10 ^ (Nat.digits 10 n).length * RepeatDigits n x))
+    simp [repeatDigits, List.replicate_succ]
+    have : Nat.ofDigits 10 (Nat.digits 10 (n + 10 ^ (Nat.digits 10 n).length * repeatDigits n x))
         = Nat.ofDigits 10 (Nat.digits 10 n ++ (List.replicate x (Nat.digits 10 n)).flatten) := by
       rw [Nat.ofDigits_digits, Nat.ofDigits_append, Nat.ofDigits_digits, ← hx, Nat.ofDigits_digits]
     replace this := congrArg (Nat.digits 10) this
@@ -115,13 +115,13 @@ theorem repeatDigits_digits (n : ℕ) (x : ℕ)
       exact digits_getLast_ne_zero _ _ (by simp) h
 
 theorem repeatDigits_len (n : ℕ) (x : ℕ)
-: (Nat.digits 10 (RepeatDigits n x)).length = x * (Nat.digits 10 n).length := by
+: (Nat.digits 10 (repeatDigits n x)).length = x * (Nat.digits 10 n).length := by
   rw [repeatDigits_digits, List.length_flatten, List.map_replicate, List.sum_replicate_nat]
 
-def is_invalid (n : ℕ) (x : ℕ) := ∃ m, n = RepeatDigits m x
+def is_invalid (n : ℕ) (x : ℕ) := ∃ m, n = repeatDigits m x
 
 theorem is_invalid_lt_iff (x : ℕ) (hx : 0 < x) (le : n < 10 ^ (x * k))
-: is_invalid n x ↔ ∃ m < 10 ^ k, n = RepeatDigits m x := by
+: is_invalid n x ↔ ∃ m < 10 ^ k, n = repeatDigits m x := by
   constructor
   case mp =>
     rintro ⟨m, rfl⟩
@@ -143,24 +143,24 @@ theorem is_invalid_lt_iff (x : ℕ) (hx : 0 < x) (le : n < 10 ^ (x * k))
     rintro ⟨m, hm, rfl⟩
     use m
 
-def MaxLength (x : ℕ) (ranges : List Range) (h : ranges ≠ []) : ℕ :=
+def maxLength (x : ℕ) (ranges : List Range) (h : ranges ≠ []) : ℕ :=
   ranges.map (fun r => (Nat.log 10 r.stop + 1) / x) |>.max (by simpa)
 
-def GetInvalid (x : ℕ) (ranges : List Range) (h : ranges ≠ []) : List ℕ :=
-  (List.range (10 ^ MaxLength x ranges h)).map (RepeatDigits · x) |>.filter (fun n => ranges.any (n ∈ ·))
+def getInvalid (x : ℕ) (ranges : List Range) (h : ranges ≠ []) : List ℕ :=
+  (List.range (10 ^ maxLength x ranges h)).map (repeatDigits · x) |>.filter (fun n => ranges.any (n ∈ ·))
 
 theorem getInvalid_complete (n : ℕ) (x : ℕ) (hx : 0 < x) (h : ranges ≠ [])
-: n ∈ GetInvalid x ranges h ↔ is_invalid n x ∧ ranges.any (n ∈ ·) := by
+: n ∈ getInvalid x ranges h ↔ is_invalid n x ∧ ranges.any (n ∈ ·) := by
   constructor
   case mp =>
-    rw [GetInvalid, is_invalid, List.mem_filter, List.mem_map]
+    rw [getInvalid, is_invalid, List.mem_filter, List.mem_map]
     rintro ⟨⟨m, hm, rfl⟩, hn⟩
     exact ⟨⟨m, rfl⟩, hn⟩
   case mpr =>
-    rw [GetInvalid, is_invalid, List.mem_filter, List.mem_map]
+    rw [getInvalid, is_invalid, List.mem_filter, List.mem_map]
     rintro ⟨⟨m, rfl⟩, hn⟩
     refine ⟨⟨m, ?_, rfl⟩, hn⟩
-    rw [List.mem_range, MaxLength]
+    rw [List.mem_range, maxLength]
     rw [← Nat.digits_length_le_iff (by simp)]
     rw [List.any_iff_exists_prop] at hn
     rcases hn with ⟨r, hr, hn⟩
@@ -176,7 +176,7 @@ theorem getInvalid_complete (n : ℕ) (x : ℕ) (hx : 0 < x) (h : ranges ≠ [])
       simp
     case neg hs =>
       rw [← Nat.digits_len _ _ (by simp) hs]
-      exact Nat.le_digits_len_le _ _ _ hn.right 
+      exact Nat.le_digits_len_le _ _ _ hn.right
 
 namespace Task1
 
@@ -184,14 +184,14 @@ def main : IO Unit := do
   let test ← IO.FS.readFile (System.FilePath.mk "Data/Day02/test.txt")
   let ranges ← IO.ofExcept (Range.parser.run test)
   if h : ranges.toList ≠ [] then do
-    println! "Test: {GetInvalid 2 ranges.toList h |>.sum}"
+    println! "Test: {getInvalid 2 ranges.toList h |>.sum}"
     println! "Expected: {1227775554}"
   else do
     println! "list of ranges was empty - parsing error?"
   let data ← IO.FS.readFile (System.FilePath.mk "Data/Day02/task.txt")
   let ranges ← IO.ofExcept (Range.parser.run data)
   if h : ranges.toList ≠ [] then do
-    println! "Task: {GetInvalid 2 ranges.toList h |>.sum}"
+    println! "Task: {getInvalid 2 ranges.toList h |>.sum}"
   else do
     println! "list of ranges was empty - parsing error?"
 
@@ -202,15 +202,15 @@ namespace Task2
 -- if n = 0 then any x works, so we have to restrict it to be small enough
 def is_invalid' (n : ℕ) := if n = 0 then True else ∃ x > 1, is_invalid n x
 
-def MaxLength' (ranges : List Range) (h : ranges ≠ []) : ℕ :=
+def maxLength' (ranges : List Range) (h : ranges ≠ []) : ℕ :=
   max 3 (ranges.map (fun r => (Nat.digits 10 r.stop.succ).length + 1) |>.max (by simpa))
 
-def GetInvalid' (ranges : List Range) (h : ranges ≠ []) : Std.HashSet ℕ :=
-  Std.HashSet.ofList <| (2...MaxLength' ranges h).toList.flatMap (GetInvalid · ranges h)
+def getInvalid' (ranges : List Range) (h : ranges ≠ []) : Std.HashSet ℕ :=
+  Std.HashSet.ofList <| (2...maxLength' ranges h).toList.flatMap (getInvalid · ranges h)
 
 theorem getInvalid'_complete (n : ℕ) (h : ranges ≠ [])
-: n ∈ GetInvalid' ranges h ↔ is_invalid' n ∧ ranges.any (n ∈ ·) := by
-  simp [GetInvalid', Std.Rco.mem_toList_iff_mem, Std.Rco.mem_iff]
+: n ∈ getInvalid' ranges h ↔ is_invalid' n ∧ ranges.any (n ∈ ·) := by
+  simp [getInvalid', Std.Rco.mem_toList_iff_mem, Std.Rco.mem_iff]
   constructor
   case mp =>
     intro ⟨x, ⟨hx₁, hx₂⟩, hn⟩
@@ -228,11 +228,11 @@ theorem getInvalid'_complete (n : ℕ) (h : ranges ≠ [])
     rintro ⟨hn, r, hr₁, hr₂⟩
     cases n
     case zero =>
-      refine ⟨2, ⟨le_rfl, by simp [MaxLength']⟩, ?_⟩
+      refine ⟨2, ⟨le_rfl, by simp [maxLength']⟩, ?_⟩
       rw [getInvalid_complete _ _ (by simp)]
       simp [is_invalid]
       refine ⟨⟨0, ?_⟩, r, hr₁, hr₂⟩
-      simp [RepeatDigits]
+      simp [repeatDigits]
     case succ n =>
       simp [is_invalid'] at hn
       rcases hn with ⟨x, hx₁, m, hm⟩
@@ -246,7 +246,7 @@ theorem getInvalid'_complete (n : ℕ) (h : ranges ≠ [])
         simp at hm
       refine ⟨x, ⟨by linarith, ?_⟩, ?_⟩
       · by_contra!
-        rw [MaxLength', max_le_iff, List.max_le_iff] at this
+        rw [maxLength', max_le_iff, List.max_le_iff] at this
         rcases this with ⟨hx₁, this⟩
         specialize this _ (List.mem_map.mpr ⟨r, hr₁, rfl⟩)
         rw [Range.mem_range_iff, Set.mem_Ico] at hr₂
@@ -268,18 +268,18 @@ def main : IO Unit := do
   let test ← IO.FS.readFile (System.FilePath.mk "Data/Day02/test.txt")
   let ranges ← IO.ofExcept (Range.parser.run test)
   if h : ranges.toList ≠ [] then do
-    println! "Test: {GetInvalid' ranges.toList h |>.toList.sum}"
+    println! "Test: {getInvalid' ranges.toList h |>.toList.sum}"
     println! "Expected: {4174379265}"
   else do
     println! "list of ranges was empty - parsing error?"
   let data ← IO.FS.readFile (System.FilePath.mk "Data/Day02/task.txt")
   let ranges ← IO.ofExcept (Range.parser.run data)
   if h : ranges.toList ≠ [] then do
-    println! "Task: {GetInvalid' ranges.toList h |>.toList.sum}"
+    println! "Task: {getInvalid' ranges.toList h |>.toList.sum}"
   else do
     println! "list of ranges was empty - parsing error?"
 
-end Task2 
+end Task2
 
 def main : IO Unit := do
   println! "Day 2"
@@ -289,5 +289,5 @@ def main : IO Unit := do
   println! "Task 2"
   Task2.main
   println! ""
-  
+
 end Day02
