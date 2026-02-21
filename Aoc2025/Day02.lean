@@ -1,45 +1,15 @@
 import Std.Internal.Parsec.String
-import Mathlib.Algebra.Order.Group.Nat
-import Mathlib.Order.Interval.Set.Basic
 import Mathlib.Data.Nat.Digits.Lemmas
 import Mathlib.Data.Bool.AllAny
 import Std.Data.HashSet.Lemmas
+import Aoc2025.Utils.Range
 
 open Std.Internal.Parsec.String
 
 namespace Day02
 
--- an inclusive range
-structure Range where
-  start : ℕ
-  stop : ℕ
-  h : start ≤ stop
-
-namespace Range
-
-def set (range : Range) : Set ℕ := Set.Ico range.start range.stop.succ
-
-instance : Membership ℕ Range where
-  mem r i := i ∈ r.set
-
-instance (range : Range) (n : ℕ) : Decidable (n ∈ range) :=
-  Set.decidableMemIco
-
-theorem mem_range_iff (range : Range) (n : ℕ)
-: n ∈ range ↔ n ∈ Set.Ico range.start range.stop.succ := by rfl
-
 def parser : Parser (Array Range) :=
-  Std.Internal.Parsec.many <| do
-    let start ← digits
-    skipString "-"
-    let stop ← digits
-    let () ← skipString "," <|> pure ()
-    if h : start ≤ stop then
-      return { start, stop, h }
-    else
-      Std.Internal.Parsec.fail "range was out of order"
-
-end Range
+  Std.Internal.Parsec.many <| Range.parser <* (skipString "," <|> pure ())
 
 def repeatDigits (n : ℕ) : ℕ → ℕ
 | 0 => 0
@@ -182,14 +152,14 @@ namespace Task1
 
 def main : IO Unit := do
   let test ← IO.FS.readFile (System.FilePath.mk "Data/Day02/test.txt")
-  let ranges ← IO.ofExcept (Range.parser.run test)
+  let ranges ← IO.ofExcept (parser.run test)
   if h : ranges.toList ≠ [] then do
     println! "Test: {getInvalid 2 ranges.toList h |>.sum}"
     println! "Expected: {1227775554}"
   else do
     println! "list of ranges was empty - parsing error?"
   let data ← IO.FS.readFile (System.FilePath.mk "Data/Day02/task.txt")
-  let ranges ← IO.ofExcept (Range.parser.run data)
+  let ranges ← IO.ofExcept (parser.run data)
   if h : ranges.toList ≠ [] then do
     println! "Task: {getInvalid 2 ranges.toList h |>.sum}"
   else do
@@ -266,14 +236,14 @@ theorem getInvalid'_complete (n : ℕ) (h : ranges ≠ [])
 
 def main : IO Unit := do
   let test ← IO.FS.readFile (System.FilePath.mk "Data/Day02/test.txt")
-  let ranges ← IO.ofExcept (Range.parser.run test)
+  let ranges ← IO.ofExcept (parser.run test)
   if h : ranges.toList ≠ [] then do
     println! "Test: {getInvalid' ranges.toList h |>.toList.sum}"
     println! "Expected: {4174379265}"
   else do
     println! "list of ranges was empty - parsing error?"
   let data ← IO.FS.readFile (System.FilePath.mk "Data/Day02/task.txt")
-  let ranges ← IO.ofExcept (Range.parser.run data)
+  let ranges ← IO.ofExcept (parser.run data)
   if h : ranges.toList ≠ [] then do
     println! "Task: {getInvalid' ranges.toList h |>.toList.sum}"
   else do

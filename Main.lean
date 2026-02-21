@@ -5,3 +5,4 @@ def main : IO Unit := do
   Day02.main
   Day03.main
   Day04.main
+  Day05.main
