@@ -350,7 +350,7 @@ def main : IO Unit := do
 end Task2
 
 def main : IO Unit := do
-  println! "Day 2"
+  println! "Day 5"
   println! "Task 1"
   Task1.main
   println! ""
