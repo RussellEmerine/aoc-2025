@@ -67,6 +67,11 @@ theorem mem_subvectors
 instance (n : ℕ) (α : Type u) [LinearOrder α] : LinearOrder (List.Vector α n) :=
   Subtype.instLinearOrder _
 
+theorem vector_le_iff [LinearOrder α] {v₁ v₂ : List.Vector α n}
+: v₁ ≤ v₂ ↔ v₁.val ≤ v₂.val := by
+  rw [Subtype.coe_le_coe]
+  rfl
+
 variable {α : Type u} [LinearOrder α] {x : α} {xs : List α}
 
 -- has the desired behavior but is exponential time
@@ -88,7 +93,7 @@ theorem maxSubvector'_max (xs : List α) (n : ℕ)
     rw [mono_map_maximum]
     intro v₁ v₂ h
     dsimp
-    rw [← Subtype.coe_le_coe, List.Vector.cons_val, List.Vector.cons_val]
+    rw [vector_le_iff, List.Vector.cons_val, List.Vector.cons_val]
     apply List.cons_le_cons
     rw [Subtype.coe_le_coe]
     exact h

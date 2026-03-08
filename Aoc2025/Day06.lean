@@ -5,7 +5,6 @@ open Std.Internal.Parsec.String
 
 namespace Day06
 
-
 inductive Op where | Add | Mul deriving DecidableEq
 
 namespace Op
