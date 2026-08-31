@@ -37,7 +37,7 @@ lemma accessible_set
 : accessible (grid.set i j false) i' j' := by
   simp [accessible] at h₂ ⊢
   rcases h₂ with ⟨h₂, h₃⟩
-  rw [Grid.getElem_set, ite_cond_eq_false _ _ (by grind)]
+  rw [Grid.getElem_set, ite_eq_right_of_eq_false _ _ (by grind)]
   refine ⟨h₂, lt_of_le_of_lt ?_ h₃⟩
   apply List.countP_mono_left
   intro (a, b) hx hy
@@ -51,12 +51,12 @@ lemma not_accessible_set
 : accessible (grid.set i j false) i' j' = false := by
   simp [accessible] at h₂ ⊢
   intro h
-  rw [Grid.getElem_set, ite_cond_eq_false _ _ (by grind)] at h
+  rw [Grid.getElem_set, ite_eq_right_of_eq_false _ _ (by grind)] at h
   specialize h₂ h
   apply le_trans h₂
   apply List.countP_mono_left
   intro (a, b) hx hy
-  rw [Grid.getElem_set, hy, ite_cond_eq_false]
+  rw [Grid.getElem_set, hy, ite_eq_right_of_eq_false]
   grind
 
 def remove (state : RemovalState m n) (h : state.stack ≠ []) : RemovalState m n :=
@@ -132,10 +132,10 @@ theorem countRolls_remove_lt (state : RemovalState m n) (h : state.stack ≠ [])
   rw [List.countP_eq_countP_filter_add _ _ (· = state.stack.head h)]
   rw (occs := .pos [3]) [List.countP_eq_countP_filter_add _ _ (· = state.stack.head h)]
   rw [finRange_product_filter, List.countP_singleton, List.countP_singleton, grid_remove]
-  rw [ite_cond_eq_false]
+  rw [ite_eq_right_of_eq_false]
   case h =>
     simp [Grid.getElem_set]
-  rw [ite_cond_eq_true]
+  rw [ite_eq_left_of_eq_true]
   case h =>
     have := state.mem_stack (state.stack.head h).fst (state.stack.head h).snd
     simp [accessible] at *

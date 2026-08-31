@@ -221,10 +221,10 @@ theorem mem_insert (n : Nat) (r : Range) (rs : List Range) (hrs : is_rangeList r
             case neg hn₃ =>
               right ; left
               rw [Range.mem_range_iff, Set.mem_Ico, Nat.lt_succ_iff]
-              push_neg at *
+              push Not at *
               exact ⟨le_of_lt (h₂.trans_lt hn₃), hn₂⟩
           case inr.inl =>
-            push_neg at *
+            push Not at *
             by_cases n ≤ r'.stop
             case pos hn₃ =>
               right ; left
@@ -233,7 +233,7 @@ theorem mem_insert (n : Nat) (r : Range) (rs : List Range) (hrs : is_rangeList r
             case neg hn₃ =>
               left
               rw [Range.mem_range_iff, Set.mem_Ico, Nat.lt_succ_iff]
-              push_neg at *
+              push Not at *
               exact ⟨le_of_lt (h₁.trans_lt hn₃), hn₂⟩
           case inr.inr =>
             right ; left
@@ -255,10 +255,10 @@ def joinRanges (rs : List Range) : List Range :=
   rs.foldr insert []
 
 @[simp]
-def joinRanges_nil : joinRanges [] = [] := rfl
+theorem joinRanges_nil : joinRanges [] = [] := rfl
 
 @[simp]
-def joinRanges_cons : joinRanges (r :: rs) = insert r (joinRanges rs) := rfl
+theorem joinRanges_cons : joinRanges (r :: rs) = insert r (joinRanges rs) := rfl
 
 theorem joinRanges_is_rangeList : is_rangeList (joinRanges rs) := by
   induction rs
@@ -292,9 +292,10 @@ lemma pairwise_or {R : α → α → Prop} {l : List α}
     apply h.imp
     intro a b h
     exact Or.inl h
-  apply h.forall _ h₁ h₂ ha
-  intro a b h
-  exact h.symm
+  have : Std.Symm fun x y => R x y ∨ R y x := {
+    symm _ _ := Or.symm
+  }
+  apply h.forall h₁ h₂ ha
 
 theorem length_eq_card_toFinset (hrs : is_rangeList rs)
 : length rs = (toFinset rs).card := by

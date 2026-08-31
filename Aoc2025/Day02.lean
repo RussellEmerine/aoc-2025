@@ -145,8 +145,8 @@ theorem getInvalid_complete (n : ℕ) (x : ℕ) (hx : 0 < x) (h : ranges ≠ [])
       rw [hn.right]
       simp
     case neg hs =>
-      rw [← Nat.digits_len _ _ (by simp) hs]
-      exact Nat.le_digits_len_le _ _ _ hn.right
+      rw [← Nat.length_digits _ _ (by simp) hs]
+      exact Nat.le_length_digits_le _ _ _ hn.right
 
 namespace Task1
 
@@ -220,7 +220,7 @@ theorem getInvalid'_complete (n : ℕ) (h : ranges ≠ [])
         rcases this with ⟨hx₁, this⟩
         specialize this _ (List.mem_map.mpr ⟨r, hr₁, rfl⟩)
         rw [Range.mem_range_iff, Set.mem_Ico] at hr₂
-        have hh := Nat.le_digits_len_le 10 _ _ (le_of_lt hr₂.right)
+        have hh := Nat.le_length_digits_le 10 _ _ (le_of_lt hr₂.right)
         rw [repeatDigits_len] at hh
         replace this := lt_of_le_of_lt hh this
         conv at this =>

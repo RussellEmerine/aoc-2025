@@ -43,11 +43,6 @@ theorem apply_unmapAdj (hf : f.Injective) (hfv : (G.map f).Adj x fv)
 : f (unmapAdj hf hfv) = fv :=
   Classical.choose_spec (mem_range_of_adj hf hfv)
 
-theorem unmapAdj_apply (hf : f.Injective) (hfv : (G.map f).Adj x (f v))
-: unmapAdj hf hfv = v := by
-  apply hf
-  rw [apply_unmapAdj hf]
-
 namespace Hom
 
 def mapInj (G : SimpleGraph V) {f : V → W} (hf : f.Injective)
@@ -81,49 +76,6 @@ noncomputable def unmap (hf : f.Injective)
 : (G.map f).Walk (f u) (f v) → G.Walk u v :=
   unmap' hf rfl rfl
 
-@[simp]
-theorem unmap_nil {hf : f.Injective} : unmap hf (nil : (G.map f).Walk (f u) (f u)) = nil := rfl
-
-@[simp]
-theorem unmap_cons {hf : f.Injective} (h : (G.map f).Adj (f u) (f v)) (p : (G.map f).Walk (f v) (f w))
-: unmap hf (cons h p) = cons ((map_adj_inj_apply hf _ _).mp h) (unmap hf p) := by
-  rw [unmap, unmap', unmap]
-  simp [unmapAdj_apply hf h]
-  congr
-  · exact unmapAdj_apply hf h
-  · simp [unmapAdj_apply hf h]
-
-theorem map_map_bijective' (hf : f.Injective) (hu : fu = f u) (hv : fv = f v)
-: ((Walk.copy · hu.symm hv.symm) ∘ Walk.map (Hom.mapInj G hf)).Bijective := by
-  rw [Function.bijective_iff_has_inverse]
-  refine ⟨unmap hf ∘ (Walk.copy · hu hv), ?_, ?_⟩
-  · intro w
-    induction w generalizing fu fv
-    case nil =>
-      simp
-    case cons u w v h p ih =>
-      specialize ih rfl rfl
-      simpa
-  · intro w
-    induction w generalizing u v
-    case nil =>
-      subst hu
-      replace hv := hf hv
-      subst hv
-      simp
-    case cons u w v h p ih =>
-      rcases mem_range_of_adj hf h with ⟨w, rfl⟩
-      subst hu hv
-      specialize ih rfl rfl
-      simpa
-
-theorem map_map_bijective (hf : f.Injective)
-: (Walk.map (Hom.mapInj G hf) : G.Walk u v → (G.map f).Walk (f u) (f v)).Bijective := by
-  suffices this : ((Walk.copy · rfl rfl) ∘ (Walk.copy · rfl rfl) ∘ Walk.map (Hom.mapInj G hf)).Bijective by
-    exact this
-  refine Function.Bijective.comp ?_ (map_map_bijective' hf rfl rfl)
-  simpa using Function.bijective_id
-
 end Walk
 
 namespace Reachable
@@ -133,10 +85,9 @@ theorem map_iff_apply (hf : f.Injective)
   constructor
   case mp =>
     intro ⟨w⟩
-    exact ⟨Function.surjInv (Walk.map_map_bijective hf).surjective w⟩
+    exact ⟨Walk.unmap hf w⟩
   case mpr =>
-    intro ⟨w⟩
-    exact ⟨w.map (Hom.mapInj G hf)⟩
+    exact SimpleGraph.Reachable.map (Hom.mapInj G hf)
 
 theorem map_iff (hf : f.Injective)
 : (G.map f).Reachable fu fv ↔ fu = fv ∨ ∃ u v, G.Reachable u v ∧ f u = fu ∧ f v = fv := by
@@ -180,12 +131,9 @@ lemma sup_edge_of_notMem_support
   (w : (G ⊔ SimpleGraph.edge a b).Walk u v)
   (hw : a ∉ w.support ∨ b ∉ w.support)
 : G.Reachable u v := by
-  have : (G ⊔ SimpleGraph.edge a b) \ SimpleGraph.edge a b = G := by
-    rw [← G.disjoint_edge] at hab
+  have : (G ⊔ SimpleGraph.edge a b).deleteEdges {s(a, b)} = G := by
     simpa
-  rw [← this]
-  unfold SimpleGraph.edge
-  rw [SimpleGraph.reachable_delete_edges_iff_exists_walk]
+  rw [← this, SimpleGraph.reachable_deleteEdges_iff_exists_walk]
   use w
   contrapose! hw
   exact ⟨w.mem_support_of_mem_edges hw (Sym2.mem_mk_left _ _), w.mem_support_of_mem_edges hw (Sym2.mem_mk_right _ _)⟩
@@ -216,7 +164,7 @@ theorem sup_edge (a b u v : V)
       intro h₁ h₂
       exact h₁.trans h₂.symm
   case neg hab =>
-    push_neg at hab
+    push Not at hab
     constructor
     case mp =>
       intro ⟨w⟩
@@ -526,7 +474,7 @@ def roots (self : UnionFind n) : Set (Fin n) :=
   { i | self.parent i = i }
 
 instance (uf : UnionFind n) (i : Fin n) : Decidable (i ∈ uf.roots) := by
-  rw [roots, Set.mem_setOf]
+  rw [roots, Set.mem_ofPred]
   apply decEq
 
 theorem equiv_reachable_empty
@@ -553,7 +501,7 @@ theorem roots_represents {self : UnionFind n} {G : SimpleGraph (Fin n)} (h : sel
 : SimpleGraph.ConnectedComponent.Represents self.roots (Set.univ : Set G.ConnectedComponent) := by
   refine ⟨fun _ _ => by simp, ?_, ?_⟩
   · intro i hi j hj hij
-    rw [roots, Set.mem_setOf, ← root_eq_self] at hi hj
+    rw [roots, Set.mem_ofPred, ← root_eq_self] at hi hj
     rw [SimpleGraph.ConnectedComponent.eq, ← h, Equiv, hi, hj] at hij
     exact hij
   · intro c _
@@ -567,10 +515,13 @@ def roots_equiv_quotient (self : UnionFind n)
   toFun r := ⟦r⟧
   invFun := Quotient.lift (fun i => ⟨self.root i, by simp [UnionFind.roots, UnionFind.parent_root]⟩) <| by
     intro i j h
-    simpa
+    congr 1
   left_inv := by
     intro ⟨r, hr⟩
-    simpa [UnionFind.root_eq_self] using hr
+    rw [Quotient.lift_mk]
+    congr
+    rw [UnionFind.root_eq_self]
+    exact hr
   right_inv := by
     intro a
     induction a using Quotient.ind

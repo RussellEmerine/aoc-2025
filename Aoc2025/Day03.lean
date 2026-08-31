@@ -22,8 +22,10 @@ lemma mono_map_maximum {α β} [LinearOrder α] [LinearOrder β] (f : α → β)
     rw [Monotone.map_max (WithBot.monotone_map_iff.mpr hf)]
     rfl
 
+def mkVector (l : List α) (h : l.length = n) : List.Vector α n := ⟨l, h⟩
+
 def subvectors (n : ℕ) (xs : List α) : List (List.Vector α n) :=
-  (xs.sublistsLen n).pmap (fun sl h => ⟨sl, h⟩) fun _ h => (List.mem_sublistsLen.mp h).right
+  (xs.sublistsLen n).pmap mkVector fun _ h => (List.mem_sublistsLen.mp h).right
 
 @[simp]
 theorem subvectors_zero : subvectors 0 (xs : List α) = [List.Vector.nil] := by
@@ -32,12 +34,12 @@ theorem subvectors_zero : subvectors 0 (xs : List α) = [List.Vector.nil] := by
     lhs
     arg 2
     rw [List.sublistsLen_zero]
-  simp
   rfl
 
 @[simp]
 theorem subvectors_succ_nil (n : ℕ) : subvectors (n + 1) ([] : List α) = [] := by
-  simp [subvectors]
+  rw [subvectors]
+  simp [List.sublistsLen_succ_nil]
 
 @[simp]
 theorem subvectors_succ_cons (n : ℕ) (x : α) (xs : List α)
@@ -69,8 +71,7 @@ instance (n : ℕ) (α : Type u) [LinearOrder α] : LinearOrder (List.Vector α 
 
 theorem vector_le_iff [LinearOrder α] {v₁ v₂ : List.Vector α n}
 : v₁ ≤ v₂ ↔ v₁.val ≤ v₂.val := by
-  rw [Subtype.coe_le_coe]
-  rfl
+  exact Subtype.coe_le_coe.symm
 
 variable {α : Type u} [LinearOrder α] {x : α} {xs : List α}
 
@@ -95,7 +96,6 @@ theorem maxSubvector'_max (xs : List α) (n : ℕ)
     dsimp
     rw [vector_le_iff, List.Vector.cons_val, List.Vector.cons_val]
     apply List.cons_le_cons
-    rw [Subtype.coe_le_coe]
     exact h
 
 def maxSubvectorAux (xs : List α) : (n : ℕ) → List (WithBot (List.Vector α n))
@@ -113,7 +113,7 @@ theorem maxSubvectorAux_ne_nil : maxSubvectorAux xs n ≠ [] := by
   rw [List.ne_nil_iff_length_pos, length_maxSubvectorAux]
   simp
 
-def tail_maxSubvectorAux
+theorem tail_maxSubvectorAux
 : (maxSubvectorAux (x :: xs) n).tail = maxSubvectorAux xs n := by
   induction n generalizing x xs
   case zero =>

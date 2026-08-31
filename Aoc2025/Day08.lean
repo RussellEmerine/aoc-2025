@@ -33,7 +33,7 @@ def rootComponentSizes (uf : UnionFind n) : Vector Nat n :=
 theorem getElem_rootComponentSizes' {i : Fin n}
 : (rootComponentSizes uf)[i] = {j | uf.root j = i}.ncard := by
   rw [rootComponentSizes, getElem_vectorCount, List.countP_eq_length_filter, ← List.toFinset_card_of_nodup ((List.nodup_finRange _).filter _)]
-  rw [Set.ncard_eq_toFinset_card', Set.toFinset_setOf]
+  rw [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred]
   congr
   ext j
   simp
@@ -46,14 +46,14 @@ theorem getElem_rootComponentSizes {G : SimpleGraph (Fin n)} {i : Fin n} (h : uf
     rw [SimpleGraph.ConnectedComponent.supp]
     congr
     ext j
-    rw [UnionFind.roots, Set.mem_setOf, ← UnionFind.root_eq_self] at hi
+    rw [UnionFind.roots, Set.mem_ofPred, ← UnionFind.root_eq_self] at hi
     rw [SimpleGraph.ConnectedComponent.eq, ← h, UnionFind.Equiv, hi]
   case neg hi =>
     rw [Set.ncard_eq_zero]
     ext j
-    rw [Set.mem_setOf, Set.mem_empty_iff_false, iff_false]
+    rw [Set.mem_ofPred, Set.mem_empty_iff_false, iff_false]
     intro rfl
-    rw [UnionFind.roots, Set.mem_setOf, UnionFind.parent_root] at hi
+    rw [UnionFind.roots, Set.mem_ofPred, UnionFind.parent_root] at hi
     contradiction
 
 def componentSizes (uf : UnionFind n) : List Nat :=
@@ -100,15 +100,16 @@ def new (uf : UnionFind n) : UnionFindComponents n where
     rw [Fintype.card_eq]
     refine ⟨⟨fun r => ⟦r⟧, Quotient.lift (fun i => ⟨uf.root i, ?_⟩) ?_, ?_, ?_⟩⟩
     · unfold UnionFind.roots
-      rw [Set.mem_setOf, UnionFind.parent_root]
+      rw [Set.mem_ofPred, UnionFind.parent_root]
     · intro i j hij
       simpa
     · intro ⟨r, hr⟩
-      rw [UnionFind.roots, Set.mem_setOf, ← UnionFind.root_eq_self] at hr
+      rw [UnionFind.roots, Set.mem_ofPred, ← UnionFind.root_eq_self] at hr
       simpa
     · intro a
       induction a using Quotient.ind
       case a i =>
+        dsimp
         simp [Quotient.eq, UnionFind.setoid, UnionFind.equiv_root]
 
 def union (self : UnionFindComponents n) (i j : Fin n) : UnionFindComponents n :=
@@ -166,7 +167,6 @@ def union (self : UnionFindComponents n) (i j : Fin n) : UnionFindComponents n :
           ?_,
         ⟩⟩
         · intro i' j' h'
-          dsimp
           split_ifs
           case pos hi' hj' =>
             rfl
@@ -184,7 +184,6 @@ def union (self : UnionFindComponents n) (i j : Fin n) : UnionFindComponents n :
             assumption
         · intro i' j' h'
           rw [UnionFind.setoid_equiv_iff] at h'
-          dsimp
           rw [UnionFind.equiv_union] at h'
           rcases h' with h' | ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
           case inl =>
@@ -233,7 +232,7 @@ def union (self : UnionFindComponents n) (i j : Fin n) : UnionFindComponents n :
               rw [Option.elim'_none, Quotient.eq]
               exact h'
             case neg h' =>
-              rw [Option.elim'_some, Quotient.lift_mk, if_neg h']
+              rw [Option.elim'_some, Quotient.lift_mk, ite_eq_right h']
         · intro o
           cases o
           case none =>
@@ -244,7 +243,7 @@ def union (self : UnionFindComponents n) (i j : Fin n) : UnionFindComponents n :
               dsimp
               split_ifs
               case pos h' =>
-                rw [Quotient.lift_mk, if_neg h, Option.some.injEq, Quotient.eq, UnionFind.setoid]
+                rw [Quotient.lift_mk, ite_eq_right h, Option.some.injEq, Quotient.eq, UnionFind.setoid]
                 dsimp
                 rw [UnionFind.equiv_union]
                 right ; right
@@ -252,7 +251,7 @@ def union (self : UnionFindComponents n) (i j : Fin n) : UnionFindComponents n :
                 rw [UnionFind.equiv_find, UnionFind.equiv_find]
                 exact h'.symm
               case neg h' =>
-                rw [Quotient.lift_mk, if_neg h']
+                rw [Quotient.lift_mk, ite_eq_right h']
   }
 
 end UnionFindComponents
